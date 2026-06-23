@@ -7,6 +7,8 @@
       url = "github:ipetkov/crane";
       inputs.nixpkgs.follows = "nixpkgs";
     };
+    # crane's nixpkgs follows nixpkgs-unstable internally;
+    # the follow above lets flake.lock pin it consistently.
     fenix = {
       url = "github:nix-community/fenix";
       inputs.nixpkgs.follows = "nixpkgs";
