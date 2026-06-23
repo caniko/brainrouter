@@ -1,0 +1,77 @@
+{
+  description = "brainrouter — Bonsai-routed LLM failover proxy";
+
+  inputs = {
+    nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
+    crane = {
+      url = "github:ipetkov/crane";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    fenix = {
+      url = "github:nix-community/fenix";
+      inputs.nixpkgs.follows = "nixpkgs";
+    };
+    flake-utils.url = "github:numtide/flake-utils";
+  };
+
+  outputs = {
+    self,
+    nixpkgs,
+    crane,
+    fenix,
+    flake-utils,
+    ...
+  }:
+    flake-utils.lib.eachDefaultSystem (system: let
+      pkgs = import nixpkgs {
+        inherit system;
+        overlays = [fenix.overlays.default];
+      };
+
+      craneLib = crane.mkLib pkgs;
+
+      # llvm/clang for llama-cpp-2 bindgen
+      llvmPackages = pkgs.llvmPackages_21;
+
+      nativeBuildInputs = with pkgs; [
+        clang_21
+        llvmPackages.libclang
+        pkg-config
+      ];
+
+      buildInputs = with pkgs; [
+        vulkan-loader
+        vulkan-headers
+      ];
+
+      LIBCLANG_PATH = "${llvmPackages.libclang.lib}/lib";
+
+      BINDGEN_EXTRA_CLANG_ARGS =
+        "-isystem ${llvmPackages.libclang.lib}/lib/clang/${llvmPackages.libclang.version}/include";
+
+      commonArgs = {
+        src = craneLib.cleanCargoSource (craneLib.path ./.);
+        pname = "brainrouter";
+        version = "1.1.2";
+        strictDeps = true;
+        inherit nativeBuildInputs buildInputs LIBCLANG_PATH BINDGEN_EXTRA_CLANG_ARGS;
+      };
+
+      cargoArtifacts = craneLib.buildDepsOnly commonArgs;
+
+      brainrouter = craneLib.buildPackage (commonArgs
+        // {
+          inherit cargoArtifacts;
+        });
+    in {
+      packages.default = brainrouter;
+      packages.brainrouter = brainrouter;
+
+      checks = {
+        inherit brainrouter;
+      };
+    })
+    // {
+      nixosModules.default = import ./modules/nixos.nix self;
+    };
+}
