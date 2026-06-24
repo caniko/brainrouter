@@ -55,7 +55,7 @@
         "-isystem ${llvmPackages.libclang.lib}/lib/clang/${llvmPackages.libclang.version}/include";
 
       commonArgs = {
-        src = craneLib.cleanCargoSource (craneLib.path ./.);
+        src = craneLib.gitOnlySource ./.;
         pname = "brainrouter";
         version = "1.1.2";
         strictDeps = true;
