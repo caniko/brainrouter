@@ -4,7 +4,7 @@
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
     rs-harbor = {
-      url = "github:caniko/rs-harbor";
+      url = "git+https://codeberg.org/caniko/rs-harbor.git";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     rust-overlay = {
