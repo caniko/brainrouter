@@ -40,6 +40,7 @@
         cmake
         llvmPackages.libclang
         pkg-config
+        shaderc
       ];
 
       buildInputs = with pkgs; [
