@@ -37,6 +37,7 @@
 
       nativeBuildInputs = with pkgs; [
         clang_21
+        cmake
         llvmPackages.libclang
         pkg-config
       ];
