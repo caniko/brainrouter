@@ -1,10 +1,13 @@
-brainrouterFlake: {
-  config,
+{
+  brainrouterPkg,
   lib,
+}: {
+  config,
+  lib: moduleLib,
   pkgs,
   ...
 }: let
-  inherit (lib) mkEnableOption mkIf mkOption types;
+  inherit (moduleLib) mkEnableOption mkIf mkOption types;
 
   cfg = config.services.brainrouter;
 
@@ -48,7 +51,7 @@ in {
 
     package = mkOption {
       type = types.package;
-      default = brainrouterFlake.packages.${pkgs.system}.brainrouter;
+      default = brainrouterPkg;
       defaultText = "brainrouter package from flake";
       description = "brainrouter package to use.";
     };

@@ -3,14 +3,12 @@
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
-    crane = {
-      url = "github:ipetkov/crane";
+    rs-harbor = {
+      url = "github:caniko/rs-harbor";
       inputs.nixpkgs.follows = "nixpkgs";
     };
-    # crane's nixpkgs follows nixpkgs-unstable internally;
-    # the follow above lets flake.lock pin it consistently.
-    fenix = {
-      url = "github:nix-community/fenix";
+    rust-overlay = {
+      url = "github:oxalica/rust-overlay";
       inputs.nixpkgs.follows = "nixpkgs";
     };
     flake-utils.url = "github:numtide/flake-utils";
@@ -19,24 +17,33 @@
   outputs = {
     self,
     nixpkgs,
-    crane,
-    fenix,
+    rs-harbor,
+    rust-overlay,
     flake-utils,
     ...
-  }:
-    flake-utils.lib.eachDefaultSystem (system: let
+  }: let
+    # Build the brainrouter package once, reuse it in outputs and
+    # in the NixOS module closure below.
+    forAllSystems = flake-utils.lib.eachDefaultSystem;
+
+    mkBrainrouter = system: let
       pkgs = import nixpkgs {
         inherit system;
-        overlays = [fenix.overlays.default];
+        overlays = [rust-overlay.overlays.default];
       };
 
-      craneLib = crane.mkLib pkgs;
+      toolchain = rs-harbor.lib.mkToolchain {
+        inherit pkgs;
+        channel = "stable";
+      };
+      inherit (toolchain) craneLib;
 
-      # llvm/clang for llama-cpp-2 bindgen
-      llvmPackages = pkgs.llvmPackages_21;
+      # Use nixpkgs's default llvmPackages for the current channel
+      # instead of pinning llvmPackages_21.
+      llvmPackages = pkgs.llvmPackages;
 
       nativeBuildInputs = with pkgs; [
-        clang_21
+        clang
         cmake
         llvmPackages.libclang
         pkg-config
@@ -69,6 +76,10 @@
         // {
           inherit cargoArtifacts;
         });
+    in brainrouter;
+  in
+    forAllSystems (system: let
+      brainrouter = mkBrainrouter system;
     in {
       packages.default = brainrouter;
       packages.brainrouter = brainrouter;
@@ -78,6 +89,12 @@
       };
     })
     // {
-      nixosModules.default = import ./modules/nixos.nix self;
+      # NixOS module closes over the x86_64 package — the only arch
+      # brainrouter targets. Consumers override via services.brainrouter.package
+      # if needed.
+      nixosModules.default = import ./modules/nixos.nix {
+        brainrouterPkg = self.packages.x86_64-linux.brainrouter;
+        inherit (nixpkgs) lib;
+      };
     };
 }
