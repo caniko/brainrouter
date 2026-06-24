@@ -3,6 +3,7 @@ use std::os::unix::fs::PermissionsExt;
 use anyhow::{bail, Context, Result};
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
+use tracing::warn;
 
 /// Top-level brainrouter configuration.
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -252,10 +253,12 @@ pub fn load(path: &Path) -> Result<BrainrouterConfig> {
         bail!("llama_swap.fallback_model must not be empty");
     }
 
-    // Validate bonsai.model_path exists (after token expansion).
+    // Warn but don't fail when the Bonsai model is missing.
+    // Without Bonsai, brainrouter routes everything as cloud and won't
+    // offer local-mode classification — the daemon stays operational.
     if !config.bonsai.model_path.exists() {
-        bail!(
-            "Bonsai model path does not exist: {}",
+        warn!(
+            "Bonsai model not found at {} — classifier disabled, cloud-only routing",
             config.bonsai.model_path.display()
         );
     }
