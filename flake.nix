@@ -42,6 +42,7 @@
       ];
 
       buildInputs = with pkgs; [
+        openssl
         vulkan-loader
         vulkan-headers
       ];
@@ -57,6 +58,7 @@
         version = "1.1.2";
         strictDeps = true;
         inherit nativeBuildInputs buildInputs LIBCLANG_PATH BINDGEN_EXTRA_CLANG_ARGS;
+        OPENSSL_NO_VENDOR = 1;
       };
 
       cargoArtifacts = craneLib.buildDepsOnly commonArgs;
