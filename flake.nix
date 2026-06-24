@@ -55,12 +55,7 @@
         "-isystem ${llvmPackages.libclang.lib}/lib/clang/${llvmPackages.libclang.version}/include";
 
       commonArgs = {
-        src = craneLib.path {
-          path = ./.;
-          extraFilter = path: type:
-            builtins.any (ext: nixpkgs.lib.strings.hasSuffix ext path) [".html" ".svg"]
-            || craneLib.path.defaultFilter path type;
-        };
+        src = craneLib.path ./.;
         pname = "brainrouter";
         version = "1.1.2";
         strictDeps = true;
