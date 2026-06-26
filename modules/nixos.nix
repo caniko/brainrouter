@@ -1,13 +1,12 @@
 {
   brainrouterPkg,
-  lib,
 }: {
   config,
-  lib: moduleLib,
+  lib,
   pkgs,
   ...
 }: let
-  inherit (moduleLib) mkEnableOption mkIf mkOption types;
+  inherit (lib) mkEnableOption mkIf mkOption types;
 
   cfg = config.services.brainrouter;
 
